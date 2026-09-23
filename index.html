@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="description" content="Умный подбор event-подрядчиков в Казахстане по городу, дате, формату мероприятия и бюджету.">
+  <title>HackAlem AI — Подбор подрядчиков</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%234f46e5'/%3E%3Cpath d='m16 5 3 8 8 3-8 3-3 8-3-8-8-3 8-3Z' fill='white'/%3E%3C/svg%3E">
+  <!-- Tailwind через CDN. Основные стили продублированы обычным CSS,
+       чтобы файл оставался читаемым даже без доступа к CDN. -->
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4" async></script>
+  <style>
+    :root { color-scheme: dark; --bg:#0f172a; --surface:#151f34; --field:#10192c; --border:#2a354b; --text:#f1f5f9; --muted:#a1aec5; --accent:#4f46e5; --accent-light:#a5b4fc; }
+    *, *::before, *::after { box-sizing:border-box; }
+    [hidden] { display:none !important; }
+    body { margin:0; background:var(--bg); color:var(--text); font-family:Inter,"Segoe UI",Arial,sans-serif; font-size:16px; line-height:1.5; -webkit-font-smoothing:antialiased; }
+    button,input,select { font:inherit; }
+    button { cursor:pointer; }
+    button:disabled { cursor:wait; }
+    button,input,select { -webkit-tap-highlight-color:transparent; }
+    h1,h2,h3,p { margin:0; }
+    svg { display:block; flex-shrink:0; }
+    .icon { width:20px; height:20px; fill:none; stroke:currentColor; stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round; }
+    :focus-visible { outline:3px solid #a5b4fc; outline-offset:4px; }
+    ::selection { background:#4f46e5; color:#fff; }
+    .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+    .skip-link { position:fixed; top:12px; left:12px; z-index:20; transform:translateY(-180%); opacity:0; pointer-events:none; background:var(--accent); color:#fff; padding:12px 18px; border-radius:8px; }
+    .skip-link:focus { transform:none; opacity:1; pointer-events:auto; }
+    .shell { width:min(1232px,100%); margin:auto; padding-inline:32px; }
+    .topbar { border-bottom:1px solid var(--border); background:#10182a; }
+    .topbar-inner { min-height:86px; display:flex; align-items:center; justify-content:space-between; gap:20px; }
+    .brand { display:flex; align-items:center; gap:12px; }
+    .brand-mark { display:grid; place-items:center; width:42px; height:42px; background:var(--accent); border:1px solid #706af0; border-radius:12px; color:#fff; }
+    .brand-mark .icon { width:24px; height:24px; }
+    .brand-name { font-size:21px; font-weight:720; letter-spacing:-.65px; }
+    .brand-name span { color:var(--accent-light); }
+    .brand-caption { color:var(--muted); font-size:12px; letter-spacing:1.5px; line-height:1.3; }
+    .header-note { display:flex; align-items:center; gap:9px; color:#b9c4d6; font-size:14px; }
+    .header-note .icon { width:17px; height:17px; }
+    main { padding-block:38px 28px; }
+    .intro { display:flex; justify-content:space-between; align-items:flex-end; gap:24px; margin-bottom:30px; }
+    .eyebrow { color:var(--accent-light); font-size:12px; font-weight:650; letter-spacing:1.6px; text-transform:uppercase; margin-bottom:10px; }
+    h1 { font-size:clamp(28px,3.1vw,38px); font-weight:650; line-height:1.2; letter-spacing:-1.2px; }
+    .intro-text { margin-top:11px; color:var(--muted); }
+    .ai-label { display:flex; align-items:center; gap:8px; flex-shrink:0; border:1px solid #414376; background:#222747; color:#c7d2fe; padding:8px 12px; border-radius:9px; font-size:13px; }
+    .ai-label .icon { width:16px; height:16px; }
+    .workspace { display:grid; grid-template-columns:340px minmax(0,1fr); gap:28px; align-items:start; }
+    .form-panel { border:1px solid var(--border); border-radius:18px; background:var(--surface); overflow:hidden; }
+    .panel-heading { padding:23px 24px 19px; border-bottom:1px solid var(--border); display:flex; gap:12px; align-items:center; }
+    .panel-heading > .icon { color:var(--accent-light); }
+    h2 { font-size:19px; line-height:1.35; font-weight:620; letter-spacing:-.35px; }
+    .panel-heading p { color:var(--muted); font-size:13px; margin-top:4px; }
+    .form-body { margin:0; padding:21px 24px 24px; border:0; min-width:0; }
+    .fields { display:grid; gap:17px; }
+    .field { min-width:0; }
+    label { display:block; color:#d9e1ef; font-size:14px; font-weight:550; margin-bottom:7px; }
+    .control { position:relative; }
+    .control > .icon { position:absolute; left:13px; top:15px; color:#8899b5; width:18px; height:18px; pointer-events:none; }
+    input, select { display:block; width:100%; height:48px; border:1px solid #354158; border-radius:9px; padding:10px 12px 10px 40px; background:var(--field); color:#f1f5f9; font-size:15px; transition:border-color .16s,box-shadow .16s; min-width:0; }
+    input:hover,select:hover { border-color:#65708d; }
+    input:focus,select:focus { outline:none; border-color:#818cf8; box-shadow:0 0 0 3px rgb(99 102 241 / .16); }
+    select { appearance:none; padding-right:35px; text-overflow:ellipsis; }
+    select option { background:#172137; color:#f1f5f9; }
+    .control .chevron { right:12px; left:auto; width:16px; height:16px; top:16px; }
+    input[type="date"] { padding-right:12px; }
+    input[type="date"]::-webkit-calendar-picker-indicator { cursor:pointer; opacity:.75; }
+    .money-input { padding-right:43px; font-variant-numeric:tabular-nums; }
+    .currency { position:absolute; right:15px; top:12px; color:#a5b4fc; font-weight:600; pointer-events:none; }
+    .hint { margin-top:7px; color:#94a3bd; font-size:12px; line-height:1.5; }
+    .optional-filters { margin-top:19px; border-top:1px solid var(--border); padding-top:15px; }
+    .optional-filters summary { cursor:pointer; color:#c7d2fe; font-size:14px; font-weight:550; padding:3px 0; }
+    .optional-filters[open] summary { margin-bottom:15px; }
+    .optional-fields { display:grid; gap:17px; }
+    .optional-fields input,.optional-fields select { padding-left:12px; }
+    .data-notes { display:flex; flex-wrap:wrap; gap:6px; margin:-3px 0 16px; }
+    .data-note { color:#e5c888; background:#302d30; border:1px solid #685a3b; border-radius:5px; padding:3px 7px; font-size:12px; }
+    .notice.notice--neutral { border-color:#3e4b70; background:#202941; color:#c6d1ec; }
+    .notice.notice--neutral > .icon { color:#a5b4fc; }
+    .form-divider { border:0; border-top:1px solid var(--border); margin:22px 0; }
+    .primary { display:flex; align-items:center; justify-content:center; gap:10px; min-height:49px; width:100%; border:1px solid #7771ed; border-radius:10px; background:var(--accent); color:#fff; font-size:16px; font-weight:600; padding:12px 16px; box-shadow:0 4px 16px rgb(49 46 129 / .25); transition:background .16s,transform .16s; }
+    .primary:hover:not(:disabled) { background:#5d54ed; transform:translateY(-1px); }
+    .primary:active:not(:disabled) { transform:translateY(0); }
+    .primary:disabled { opacity:.7; }
+    fieldset:disabled input,fieldset:disabled select { opacity:.65; }
+    .form-footnote { text-align:center; font-size:12px; color:#94a3bd; margin-top:12px; }
+    .results { min-width:0; scroll-margin-top:24px; }
+    .results-heading { min-height:44px; display:flex; align-items:center; justify-content:space-between; gap:15px; padding-block:4px 16px; }
+    .results-title { display:flex; align-items:center; gap:10px; }
+    .count { display:grid; place-items:center; min-width:25px; height:25px; padding:0 7px; font-size:12px; background:#262e4d; color:#c7d2fe; border-radius:7px; font-variant-numeric:tabular-nums; }
+    .result-meta { color:#94a3bd; font-size:13px; }
+    .search-context { display:flex; flex-wrap:wrap; gap:7px; margin-bottom:18px; }
+    .context-chip { font-size:12px; color:#b9c5db; border:1px solid var(--border); border-radius:6px; padding:4px 8px; }
+    .state-panel { min-height:520px; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; border:1px dashed #35415b; border-radius:18px; background:radial-gradient(ellipse at 50% 30%,rgb(79 70 229 / .08),transparent 65%); padding:38px 28px; }
+    .state-panel h3 { font-size:23px; line-height:1.35; letter-spacing:-.6px; font-weight:600; max-width:430px; }
+    .state-panel p { color:var(--muted); margin-top:12px; max-width:385px; line-height:1.65; }
+    .orbit { width:176px; height:176px; display:grid; place-items:center; border:1px solid #293452; border-radius:50%; margin-bottom:29px; position:relative; }
+    .orbit::before { content:""; width:128px; height:128px; border:1px solid #394368; border-radius:50%; position:absolute; }
+    .orbit-center { width:78px; height:78px; display:grid; place-items:center; border:1px solid #6662af; border-radius:23px; background:#292d56; box-shadow:0 0 45px rgb(79 70 229 / .12); color:#b6beff; transform:rotate(-7deg); }
+    .orbit-center .icon { width:34px; height:34px; transform:rotate(7deg); }
+    .orbit-dot { width:9px; height:9px; border-radius:50%; background:#818cf8; position:absolute; right:11px; top:37px; box-shadow:0 0 0 6px #202a48; }
+    .state-kicker { color:#8f9fbb; font-size:12px; letter-spacing:1.6px; text-transform:uppercase; margin-bottom:10px; }
+    .empty-features { display:flex; justify-content:center; flex-wrap:wrap; gap:8px 20px; border-top:1px solid var(--border); padding-top:20px; margin-top:32px; }
+    .empty-features span { display:flex; align-items:center; gap:7px; color:#9cabc3; font-size:12px; }
+    .empty-features .icon { width:15px; height:15px; color:#7f8eae; }
+    .spinner { display:block; width:38px; height:38px; border:3px solid #303d5f; border-top-color:#a5b4fc; border-radius:50%; animation:spin .85s linear infinite; }
+    .button-spinner { width:18px; height:18px; border-width:2px; border-color:rgb(255 255 255 / .3); border-top-color:white; }
+    .loader-wrap { display:grid; place-items:center; width:96px; height:96px; border-radius:26px; border:1px solid #464979; background:#222b49; margin-bottom:28px; }
+    .notice { display:flex; align-items:flex-start; gap:11px; padding:14px 16px; border:1px solid #645333; border-radius:11px; color:#eed4a0; background:#2b2930; margin-bottom:16px; font-size:14px; line-height:1.6; overflow-wrap:anywhere; }
+    .notice > .icon { color:#f5c975; width:18px; height:18px; margin-top:2px; }
+    .notice p { white-space:pre-line; }
+    .error-icon { display:grid; place-items:center; width:68px; height:68px; border-radius:20px; background:#35283c; color:#fda4af; border:1px solid #6f3b51; margin-bottom:22px; }
+    .error-icon .icon { width:28px; height:28px; }
+    .retry { display:flex; align-items:center; gap:9px; margin-top:24px; padding:11px 18px; border:1px solid #55638a; border-radius:9px; background:#26314a; color:#e2e8f0; font-weight:550; }
+    .retry:hover { background:#303b56; }
+    .cards { display:grid; gap:16px; }
+    .vendor-card { border:1px solid #37415b; border-radius:16px; padding:22px; background:var(--surface); animation:enter .3s ease both; overflow-wrap:anywhere; }
+    .vendor-card:nth-child(2) { animation-delay:.06s; }
+    .vendor-card:nth-child(3) { animation-delay:.12s; }
+    .card-top { display:flex; align-items:flex-start; gap:14px; }
+    .vendor-icon { flex-shrink:0; width:47px; height:47px; display:grid; place-items:center; border:1px solid #465078; border-radius:13px; background:#283251; color:#bcc6ff; }
+    .vendor-icon .icon { width:23px; height:23px; }
+    .vendor-title { min-width:0; flex:1; }
+    .vendor-category { font-size:12px; color:#abb8e9; margin-bottom:3px; }
+    .vendor-name { font-size:21px; letter-spacing:-.45px; line-height:1.35; font-weight:600; }
+    .card-number { color:#7b89a8; font-size:13px; font-variant-numeric:tabular-nums; padding-top:2px; }
+    .card-tags { display:flex; flex-wrap:wrap; align-items:center; gap:10px 14px; margin-top:17px; margin-bottom:18px; }
+    .location-tag { display:flex; align-items:center; gap:6px; color:#b8c5da; font-size:14px; }
+    .location-tag .icon { width:16px; height:16px; }
+    .price-tag { color:#edf0ff; background:#252f49; border:1px solid #384561; border-radius:6px; padding:4px 9px; font-size:14px; font-weight:550; font-variant-numeric:tabular-nums; }
+    .explanation { padding:15px 17px; background:#222847; border:1px solid #3b416f; border-left:3px solid #818cf8; border-radius:9px; }
+    .explanation-title { display:flex; align-items:center; gap:8px; color:#c2caff; font-size:14px; font-weight:600; margin-bottom:7px; }
+    .explanation-title .icon { width:16px; height:16px; }
+    .explanation-text { color:#d4dded; font-size:15px; line-height:1.7; white-space:pre-wrap; }
+    .results-footnote { margin-top:17px; display:flex; gap:8px; color:#91a0b9; font-size:12px; }
+    .results-footnote .icon { width:15px; height:15px; margin-top:2px; }
+    .bottom-bar { margin-top:30px; padding-top:20px; border-top:1px solid var(--border); display:flex; justify-content:space-between; gap:16px; color:#8292ad; font-size:12px; }
+    .bottom-bar strong { font-weight:500; color:#aab6cd; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    @keyframes enter { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+    @media (min-width:1024px) { .form-panel { position:sticky; top:24px; } }
+    @media (max-width:1023px) { .shell { padding-inline:24px; } .workspace { grid-template-columns:300px minmax(0,1fr); gap:20px; } .form-body { padding:20px; } .panel-heading { padding-inline:20px; } .ai-label { display:none; } .vendor-card { padding:18px; } .state-panel { padding-inline:20px; } }
+    @media (max-width:760px) { .shell { padding-inline:20px; } .topbar-inner { min-height:76px; } .header-note { font-size:12px; } main { padding-top:28px; } .intro { margin-bottom:24px; } h1 { letter-spacing:-.8px; } .intro-text { font-size:15px; max-width:440px; } .workspace { grid-template-columns:1fr; gap:26px; } .fields { grid-template-columns:1fr 1fr; gap:17px 16px; } .field:last-child { grid-column:1/-1; } .state-panel { min-height:360px; padding-block:30px; } .orbit { width:138px; height:138px; margin-bottom:23px; } .orbit::before { width:104px; height:104px; } .orbit-center { width:66px; height:66px; border-radius:19px; } .orbit-dot { right:2px; } .state-panel h3 { font-size:22px; } .bottom-bar { margin-top:25px; } }
+    @media (max-width:430px) { .shell { padding-inline:16px; } .header-note { display:none; } .brand-name { font-size:20px; } .fields { grid-template-columns:1fr; } .field:last-child { grid-column:auto; } .form-body { padding:20px; } .intro-text { line-height:1.6; } .results-heading { align-items:flex-start; } .result-meta { max-width:90px; text-align:right; font-size:12px; } .vendor-card { padding:17px; } .vendor-name { font-size:19px; } .explanation { padding:13px; } .bottom-bar { flex-direction:column; gap:5px; } }
+    @media (prefers-reduced-motion:reduce) { *,*::before,*::after { animation:none !important; transition:none !important; scroll-behavior:auto !important; } }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 antialiased">
+  <a class="skip-link" href="#match-form">Перейти к подбору</a>
+  <!-- Общие SVG-иконки: без внешних шрифтов и библиотек. -->
+  <svg aria-hidden="true" width="0" height="0" style="position:absolute;overflow:hidden">
+    <defs>
+      <symbol id="i-spark" viewBox="0 0 24 24"><path d="m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5Z"/><path d="M20 2v4m-2-2h4"/></symbol>
+      <symbol id="i-pin" viewBox="0 0 24 24"><path d="M20 10c0 6-8 11-8 11S4 16 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></symbol>
+      <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M7 3v4m10-4v4M3 11h18m-13 4h2m4 0h2"/></symbol>
+      <symbol id="i-event" viewBox="0 0 24 24"><path d="m5 10-3 12 12-3ZM5 10l9 9M13 2l-1 5m10 5-5 1m-2-4 4-4M8 3l1 2m12 3 1-1m-5 10 2 1"/></symbol>
+      <symbol id="i-briefcase" viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="14" rx="3"/><path d="M8 7V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v3M3 12a20 20 0 0 0 18 0m-9 0v3"/></symbol>
+      <symbol id="i-wallet" viewBox="0 0 24 24"><path d="M20 8V5a2 2 0 0 0-2-2H6a3 3 0 0 0 0 6h14v12H6a3 3 0 0 1-3-3V6"/><path d="M20 12h-5v5h5m-3-2.5h.1"/></symbol>
+      <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m7 10 5 5 5-5"/></symbol>
+      <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 7h7m6 0h3M4 17h2m6 0h8"/><circle cx="14" cy="7" r="3"/><circle cx="9" cy="17" r="3"/></symbol>
+      <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10h.01"/></symbol>
+      <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="7.5"/><path d="m16 16 5 5"/></symbol>
+      <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 7v5h-5M4 17v-5h5M5.5 7a8 8 0 0 1 13.5-1L20 8M4 16l1 2a8 8 0 0 0 13.5-1"/></symbol>
+      <symbol id="i-mic" viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="13" rx="4"/><path d="M5 10v2a7 7 0 0 0 14 0v-2m-7 9v3m-4 0h8"/></symbol>
+      <symbol id="i-camera" viewBox="0 0 24 24"><path d="M3 6h4l2-3h6l2 3h4v14H3Z"/><circle cx="12" cy="13" r="4"/></symbol>
+      <symbol id="i-building" viewBox="0 0 24 24"><path d="M3 22h18M5 22V4l7-2 7 2v18M9 7h1m4 0h1M9 11h1m4 0h1m-6 11v-6h6v6"/></symbol>
+      <symbol id="i-flower" viewBox="0 0 24 24"><path d="M12 18v4m0-3c-4 0-5-2-5-3m5 5c4 0 5-2 5-3"/><path d="M12 4c3-6 8 0 5 3 6 0 4 7 0 7-2 6-8 4-8 1-6 2-8-5-4-7-2-5 5-7 7-4Z"/><circle cx="11" cy="10" r="2"/></symbol>
+      <symbol id="i-music" viewBox="0 0 24 24"><path d="M9 18V5l11-3v13M9 9l11-3"/><ellipse cx="6" cy="18" rx="3" ry="3"/><ellipse cx="17" cy="15" rx="3" ry="3"/></symbol>
+      <symbol id="i-gift" viewBox="0 0 24 24"><path d="M4 11v10h16V11M3 7h18v4H3Zm9 0v14"/><path d="M12 7C4 7 5 0 9 3l3 4Zm0 0c8 0 7-7 3-4l-3 4Z"/></symbol>
+    </defs>
+  </svg>
+
+  <header class="topbar">
+    <div class="shell topbar-inner">
+      <div class="brand" aria-label="HackAlem AI">
+        <div class="brand-mark"><svg class="icon" aria-hidden="true"><use href="#i-spark"/></svg></div>
+        <div><div class="brand-name">HackAlem <span>AI</span></div><div class="brand-caption">EVENT MATCH</div></div>
+      </div>
+      <div class="header-note"><svg class="icon" aria-hidden="true"><use href="#i-pin"/></svg> События в Казахстане</div>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section class="intro" aria-labelledby="page-title">
+      <div>
+        <div class="eyebrow">Умный подбор подрядчиков</div>
+        <h1 id="page-title">Ваше событие. Ваша команда.</h1>
+        <p class="intro-text">До трёх рекомендаций с объяснением, почему они вам подходят.</p>
+      </div>
+      <span class="ai-label"><svg class="icon" aria-hidden="true"><use href="#i-spark"/></svg> Подбор с объяснением</span>
+    </section>
+
+    <div class="workspace">
+      <aside class="form-panel" aria-labelledby="form-title">
+        <div class="panel-heading">
+          <svg class="icon" aria-hidden="true"><use href="#i-sliders"/></svg>
+          <div><h2 id="form-title">Параметры события</h2><p>Расскажите, что вы планируете</p></div>
+        </div>
+        <form id="match-form">
+          <fieldset class="form-body" id="form-fields">
+            <legend class="sr-only">Параметры для подбора подрядчика</legend>
+            <div class="fields">
+              <div class="field">
+                <label for="city">Город</label>
+                <div class="control">
+                  <svg class="icon" aria-hidden="true"><use href="#i-pin"/></svg>
+                  <select id="city" name="city" required><option value="Алматы" selected>Алматы</option><option value="Астана">Астана</option><option value="Зарубежье">Зарубежье</option></select>
+                  <svg class="icon chevron" aria-hidden="true"><use href="#i-chevron"/></svg>
+                </div>
+              </div>
+              <div class="field">
+                <label for="date">Дата мероприятия</label>
+                <div class="control">
+                  <svg class="icon" aria-hidden="true"><use href="#i-calendar"/></svg>
+                  <input id="date" name="event_date" type="date" value="2026-10-15" min="2026-09-23" max="2026-12-31" required aria-describedby="date-hint">
+                </div>
+                <p id="date-hint" class="hint">Календарь датасета: 23.09–31.12.2026</p>
+              </div>
+              <div class="field">
+                <label for="event-type">Формат мероприятия</label>
+                <div class="control">
+                  <svg class="icon" aria-hidden="true"><use href="#i-event"/></svg>
+                  <select id="event-type" name="event_type" required>
+                    <option value="свадьба" selected>Свадьба</option><option value="той">Той</option><option value="корпоратив">Корпоратив</option><option value="конференция">Конференция</option><option value="юбилей">Юбилей</option><option value="день рождения">День рождения</option>
+                  </select>
+                  <svg class="icon chevron" aria-hidden="true"><use href="#i-chevron"/></svg>
+                </div>
+              </div>
+              <div class="field">
+                <label for="category">Категория подрядчика</label>
+                <div class="control">
+                  <svg class="icon" aria-hidden="true"><use href="#i-briefcase"/></svg>
+                  <select id="category" name="category" required>
+                    <option value="Ведущий" selected>Ведущий</option><option value="Фотограф">Фотограф</option><option value="Банкетный зал">Банкетный зал</option><option value="Флорист">Флорист</option><option value="Декоратор">Декоратор</option><option value="Отель">Отель</option><option value="Подарки и сувениры">Подарки и сувениры</option><option value="Ведущий церемонии">Ведущий церемонии</option><option value="Фото и видеобудки">Фото и видеобудки</option><option value="Инструменталист">Инструменталист</option>
+                  </select>
+                  <svg class="icon chevron" aria-hidden="true"><use href="#i-chevron"/></svg>
+                </div>
+              </div>
+              <div class="field">
+                <label for="budget">Бюджет на подрядчика</label>
+                <div class="control">
+                  <svg class="icon" aria-hidden="true"><use href="#i-wallet"/></svg>
+                  <input class="money-input" id="budget" name="budget" type="number" inputmode="numeric" value="500000" min="0" max="9007199254740991" step="1" required aria-describedby="budget-hint">
+                  <span class="currency" aria-hidden="true">₸</span>
+                </div>
+                <p id="budget-hint" class="hint">Максимальная сумма в тенге</p>
+              </div>
+            </div>
+            <details class="optional-filters">
+              <summary>Язык и длительность</summary>
+              <div class="optional-fields">
+                <div class="field">
+                  <label for="language">Язык мероприятия</label>
+                  <div class="control">
+                    <select id="language" name="language" aria-describedby="language-hint">
+                      <option value="" selected>Любой язык</option>
+                      <option value="казахский">Казахский</option>
+                      <option value="русский">Русский</option>
+                      <option value="английский">Английский</option>
+                    </select>
+                    <svg class="icon chevron" aria-hidden="true"><use href="#i-chevron"/></svg>
+                  </div>
+                  <p class="hint" id="language-hint">Необязательный фильтр</p>
+                </div>
+                <div class="field">
+                  <label for="duration">Длительность, часов</label>
+                  <input id="duration" name="duration" type="number" min="0" step="any" inputmode="decimal" placeholder="Не указана" aria-describedby="duration-hint">
+                  <p class="hint" id="duration-hint">Например, 6 или 2,5. Можно оставить пустым.</p>
+                </div>
+              </div>
+            </details>
+            <hr class="form-divider">
+            <button class="primary bg-indigo-600" id="submit-button" type="submit">
+              <svg class="icon" id="submit-icon" aria-hidden="true"><use href="#i-spark"/></svg>
+              <span class="spinner button-spinner" id="submit-spinner" aria-hidden="true" hidden></span>
+              <span id="submit-label">Подобрать</span>
+            </button>
+            <p class="form-footnote">С учётом даты, формата и бюджета</p>
+          </fieldset>
+        </form>
+      </aside>
+
+      <section class="results" id="results" aria-labelledby="results-title" aria-busy="false">
+        <div class="results-heading">
+          <div class="results-title"><h2 id="results-title">Ваша подборка</h2><span class="count" id="result-count" hidden>0</span></div>
+          <span class="result-meta" id="result-meta">До 3 подрядчиков</span>
+        </div>
+        <div class="search-context" id="search-context" aria-label="Параметры этой подборки" hidden></div>
+        <div class="notice" id="notice" hidden><svg class="icon" aria-hidden="true"><use href="#i-info"/></svg><p id="notice-text"></p></div>
+
+        <div class="state-panel" id="initial-state">
+          <div class="orbit" aria-hidden="true"><div class="orbit-center"><svg class="icon"><use href="#i-spark"/></svg></div><span class="orbit-dot"></span></div>
+          <div class="state-kicker">Хорошее событие начинается с людей</div>
+          <h3>Найдём тех, кто вам подходит</h3>
+          <p>Выберите параметры и нажмите «Подобрать».</p>
+          <div class="empty-features" aria-hidden="true">
+            <span><svg class="icon"><use href="#i-pin"/></svg> Ваш город</span><span><svg class="icon"><use href="#i-calendar"/></svg> Ваша дата</span><span><svg class="icon"><use href="#i-wallet"/></svg> Ваш бюджет</span>
+          </div>
+        </div>
+
+        <div class="state-panel" id="loading-state" hidden>
+          <div class="loader-wrap" aria-hidden="true"><span class="spinner"></span></div>
+          <div class="state-kicker">Готовим вашу подборку</div>
+          <h3>Подбираем подходящих подрядчиков...</h3>
+          <p>Это может занять немного времени.</p>
+        </div>
+
+        <div class="state-panel" id="empty-state" hidden>
+          <div class="loader-wrap" aria-hidden="true"><svg class="icon" style="width:34px;height:34px;color:#a5b4fc"><use href="#i-search"/></svg></div>
+          <h3 id="empty-title">Подрядчики не найдены</h3>
+          <p id="empty-description">Попробуйте изменить дату, бюджет или другие параметры мероприятия.</p>
+        </div>
+
+        <div class="state-panel" id="error-state" hidden>
+          <div class="error-icon" aria-hidden="true"><svg class="icon"><use href="#i-info"/></svg></div>
+          <h3>Не удалось получить подборку</h3>
+          <p id="error-text" role="alert"></p>
+          <button class="retry" id="retry-button" type="button"><svg class="icon" aria-hidden="true"><use href="#i-refresh"/></svg> Попробовать снова</button>
+        </div>
+
+        <div id="success-state" hidden>
+          <div class="cards" id="cards"></div>
+          <p class="results-footnote"><svg class="icon" aria-hidden="true"><use href="#i-info"/></svg>Указаны стартовые цены. Итоговую стоимость уточните у подрядчика.</p>
+        </div>
+      </section>
+    </div>
+
+    <footer class="bottom-bar"><span><strong>HackAlem AI</strong> · Event Match</span><span>Анонимные профили из датасета хакатона</span></footer>
+    <p class="sr-only" id="live-status" role="status" aria-live="polite" aria-atomic="true"></p>
+    <noscript><p class="notice">Для подбора подрядчиков включите JavaScript в настройках браузера.</p></noscript>
+  </main>
+
+  <template id="card-template">
+    <article class="vendor-card">
+      <div class="card-top">
+        <div class="vendor-icon"><svg class="icon" aria-hidden="true"><use class="category-icon" href="#i-briefcase"/></svg></div>
+        <div class="vendor-title"><p class="vendor-category"></p><h3 class="vendor-name"></h3></div>
+        <span class="card-number" aria-hidden="true"></span>
+      </div>
+      <div class="card-tags">
+        <span class="location-tag"><svg class="icon" aria-hidden="true"><use href="#i-pin"/></svg><span class="vendor-city"></span></span>
+        <span class="price-tag"></span>
+      </div>
+      <div class="data-notes" hidden aria-label="Особенности данных профиля"></div>
+      <div class="explanation">
+        <div class="explanation-title"><svg class="icon" aria-hidden="true"><use href="#i-spark"/></svg>Почему подходит:</div>
+        <p class="explanation-text"></p>
+      </div>
+    </article>
+  </template>
+
+  <script>
+    'use strict';
+
+    /* ПОДКЛЮЧЕНИЕ К БЭКЕНДУ
+     * 1. Запустите FastAPI друга на http://localhost:8000.
+     * 2. POST /recommend принимает city, event_date (YYYY-MM-DD), event_type,
+     *    category и целое число budget >= 0. duration > 0 и language необязательны.
+     *    Пустые необязательные поля не передаются. event_type — в нижнем регистре.
+     * 3. Ответ: { status, count, results: [...], message, total_candidates,
+     *    total_matches, exclusion_counts }. Карточка: id, name, category, city,
+     *    price, explanation, synthetic, city_imputed, price_imputed.
+     * 4. Подбор, проверка busy_dates и формирование explanation — на сервере.
+     *    В текущем backend-python объяснения шаблонные; внешняя модель не вызывается.
+     *    categories/event_formats/busy_dates в CSV разделены символом |.
+     * 5. Для другого сервера измените только API_URL ниже. На HTTPS-сайте
+     *    укажите публичный HTTPS-адрес бэкенда; localhost — компьютер посетителя.
+     * 6. CORS на FastAPI должен разрешать origin фронтенда, POST и Content-Type.
+     *    Используйте python -m http.server 5173 и http://localhost:5173:
+     *    этот origin уже разрешён в backend-python. file:// — только для просмотра,
+     *    его origin "null" не разрешён бэкендом по умолчанию.
+     *    Не используйте mode: 'no-cors': он не позволяет прочитать ответ.
+     * 7. Пределы input#date соответствуют календарю приложенного датасета.
+     *    Если календарь расширится, обновите min/max и текст date-hint.
+     * В файл не встроены фиктивные рекомендации или ключи доступа к ИИ.
+     */
+    const API_URL = 'http://localhost:8000/recommend';
+    const REQUEST_TIMEOUT_MS = 45000;
+    const MAX_CARDS = 3;
+
+    const byId = (id) => document.getElementById(id);
+    const form = byId('match-form');
+    const fields = byId('form-fields');
+    const results = byId('results');
+    const cardsContainer = byId('cards');
+    const budgetInput = byId('budget');
+    const durationInput = byId('duration');
+    const numberFormat = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2 });
+    const dateFormat = new Intl.DateTimeFormat('ru-RU', { day:'numeric', month:'long', year:'numeric' });
+    const stateNames = ['initial', 'loading', 'empty', 'error', 'success'];
+    let isLoading = false;
+    let currentState = 'initial';
+
+    class MatchError extends Error {}
+
+    function showState(nextState) {
+      currentState = nextState;
+      stateNames.forEach((name) => { byId(name + '-state').hidden = name !== nextState; });
+      results.setAttribute('aria-busy', String(nextState === 'loading'));
+    }
+
+    function setLoading(loading) {
+      isLoading = loading;
+      fields.disabled = loading;
+      // Явный disabled на кнопке удобен и для браузеров, и для интеграционных проверок.
+      byId('submit-button').disabled = loading;
+      byId('retry-button').disabled = loading;
+      byId('submit-spinner').hidden = !loading;
+      byId('submit-icon').hidden = loading;
+      byId('submit-label').textContent = loading ? 'Подбираем...' : 'Подобрать';
+    }
+
+    function clearResults() {
+      cardsContainer.replaceChildren();
+      byId('notice').hidden = true;
+      byId('notice').classList.remove('notice--neutral');
+      byId('notice-text').textContent = '';
+      byId('result-count').hidden = true;
+      byId('result-meta').textContent = 'До 3 подрядчиков';
+      byId('search-context').hidden = true;
+      byId('search-context').replaceChildren();
+      byId('error-text').textContent = '';
+    }
+
+    function getPayload() {
+      const payload = {
+        city: byId('city').value,
+        event_date: byId('date').value,
+        event_type: byId('event-type').value,
+        category: byId('category').value,
+        budget: Number(budgetInput.value)
+      };
+      const language = byId('language').value;
+      if (language) payload.language = language;
+      if (durationInput.value !== '') payload.duration = Number(durationInput.value);
+      return payload;
+    }
+
+    function validateNumbers() {
+      budgetInput.setCustomValidity('');
+      if (budgetInput.value && (!Number.isSafeInteger(Number(budgetInput.value)) || Number(budgetInput.value) < 0)) {
+        budgetInput.setCustomValidity('Укажите целую сумму в тенге, не меньше нуля.');
+      }
+      durationInput.setCustomValidity('');
+      if (durationInput.value !== '' && (!Number.isFinite(Number(durationInput.value)) || Number(durationInput.value) <= 0)) {
+        durationInput.setCustomValidity('Укажите длительность больше нуля или оставьте поле пустым.');
+      }
+    }
+
+    function renderSearchContext(payload) {
+      const container = byId('search-context');
+      // Локальный полдень исключает сдвиг даты при преобразовании часового пояса.
+      const label = dateFormat.format(new Date(payload.event_date + 'T12:00:00'));
+      const eventName = payload.event_type.charAt(0).toUpperCase() + payload.event_type.slice(1);
+      const labels = [payload.city, label, eventName, payload.category, 'До ' + numberFormat.format(payload.budget) + ' ₸'];
+      if (payload.language) labels.push('Язык: ' + payload.language);
+      if (payload.duration !== undefined) labels.push(numberFormat.format(payload.duration) + ' ч');
+      labels.forEach((text) => {
+        const chip = document.createElement('span');
+        chip.className = 'context-chip';
+        chip.textContent = text;
+        container.append(chip);
+      });
+      container.hidden = false;
+    }
+
+    function messageFrom(data) {
+      return [...new Set([data.message, data.status_message]
+        .filter((value) => typeof value === 'string' && value.trim())
+        .map((value) => value.trim()))].join('\n');
+    }
+
+    function normalizeCard(card) {
+      if (!card || typeof card !== 'object' || Array.isArray(card) || typeof card.name !== 'string' || !card.name.trim()) {
+        throw new MatchError('Сервер прислал карточку без имени подрядчика. Попробуйте повторить запрос.');
+      }
+      const cleanText = (value, fallback) => typeof value === 'string' && value.trim() ? value.trim() : fallback;
+      const rawPrice = card.price;
+      const hasPrice = (typeof rawPrice === 'number' || typeof rawPrice === 'string') && String(rawPrice).trim() !== '';
+      const price = hasPrice ? Number(rawPrice) : NaN;
+      return {
+        id: cleanText(card.id, ''),
+        name: card.name.trim(),
+        category: cleanText(card.category, 'Категория не указана'),
+        city: cleanText(card.city, 'Город не указан'),
+        price: Number.isFinite(price) && price >= 0 ? price : null,
+        explanation: cleanText(card.explanation, 'Сервер не передал объяснение для этого подрядчика.'),
+        synthetic: card.synthetic === true,
+        city_imputed: card.city_imputed === true,
+        price_imputed: card.price_imputed === true
+      };
+    }
+
+    function iconFor(category) {
+      const icons = {
+        'Ведущий':'mic', 'Ведущий церемонии':'mic', 'Фотограф':'camera',
+        'Фото и видеобудки':'camera', 'Банкетный зал':'building', 'Отель':'building',
+        'Флорист':'flower', 'Декоратор':'spark', 'Подарки и сувениры':'gift', 'Инструменталист':'music'
+      };
+      return '#i-' + (icons[category.split('|')[0].trim()] || 'briefcase');
+    }
+
+    function renderCard(card, index) {
+      const fragment = byId('card-template').content.cloneNode(true);
+      // Любой серверный текст вставляется через textContent, без выполнения HTML.
+      fragment.querySelector('.vendor-name').textContent = card.name;
+      if (card.id) fragment.querySelector('.vendor-card').dataset.profileId = card.id;
+      fragment.querySelector('.vendor-category').textContent = card.category.split('|').join(' · ');
+      fragment.querySelector('.vendor-city').textContent = card.city;
+      fragment.querySelector('.price-tag').textContent = card.price === null
+        ? 'Цена уточняется' : 'от ' + numberFormat.format(card.price) + ' ₸';
+      fragment.querySelector('.explanation-text').textContent = card.explanation;
+      fragment.querySelector('.card-number').textContent = String(index + 1).padStart(2, '0');
+      fragment.querySelector('.category-icon').setAttribute('href', iconFor(card.category));
+      const notes = fragment.querySelector('.data-notes');
+      const flags = [
+        [card.price_imputed, 'Цена заполнена в датасете'],
+        [card.city_imputed, 'Город заполнен в датасете'],
+        [card.synthetic, 'Синтетический профиль']
+      ];
+      flags.forEach(([enabled, label]) => {
+        if (!enabled) return;
+        const badge = document.createElement('span');
+        badge.className = 'data-note';
+        badge.textContent = label;
+        notes.append(badge);
+      });
+      notes.hidden = !notes.childElementCount;
+      return fragment;
+    }
+
+    function renderResponse(data) {
+      if (!data || typeof data !== 'object' || Array.isArray(data) || !Array.isArray(data.results)) {
+        throw new MatchError('Сервер вернул ответ без списка подрядчиков. Ожидается поле results со списком карточек.');
+      }
+      if (!['matches_found', 'no_category_in_city', 'no_matches'].includes(data.status)) {
+        throw new MatchError('Сервер вернул неизвестный статус подбора. Попробуйте повторить запрос.');
+      }
+      if ((data.status === 'matches_found') !== (data.results.length > 0)) {
+        throw new MatchError('Статус ответа не соответствует списку подрядчиков. Попробуйте повторить запрос.');
+      }
+      // Сохраняем порядок ранжирования бэкенда и не показываем больше трёх карточек.
+      const cards = data.results.slice(0, MAX_CARDS).map(normalizeCard);
+      const message = messageFrom(data);
+      const fragment = document.createDocumentFragment();
+      cards.forEach((card, index) => fragment.append(renderCard(card, index)));
+      cardsContainer.replaceChildren(fragment);
+      byId('notice-text').textContent = message;
+      byId('notice').hidden = !message;
+      byId('notice').classList.toggle('notice--neutral', cards.length === MAX_CARDS);
+      byId('result-count').textContent = String(cards.length);
+      byId('result-count').hidden = false;
+      const total = Number.isSafeInteger(data.total_matches) && data.total_matches >= cards.length
+        ? data.total_matches : cards.length;
+      byId('result-meta').textContent = cards.length ? 'Показано ' + cards.length + ' из ' + total : 'Нет совпадений';
+      const noCategory = data.status === 'no_category_in_city';
+      byId('empty-title').textContent = noCategory ? 'В этом городе нет такой категории' : 'Нет совпадений по вашим условиям';
+      byId('empty-description').textContent = noCategory
+        ? 'Выберите другой город или категорию подрядчика.'
+        : 'Попробуйте изменить дату, бюджет, язык или длительность мероприятия.';
+      showState(cards.length ? 'success' : 'empty');
+      byId('live-status').textContent = 'Подбор завершён. Показано вариантов: ' + cards.length + '. ' + message;
+    }
+
+    function httpError(status, data) {
+      if (status === 422) {
+        const fieldLabels = { city:'город', event_date:'дата мероприятия', event_type:'формат мероприятия',
+          category:'категория', budget:'бюджет', duration:'длительность', language:'язык' };
+        const invalidFields = Array.isArray(data?.detail) ? [...new Set(data.detail.flatMap((issue) => {
+          const key = Array.isArray(issue?.loc) ? issue.loc[issue.loc.length - 1] : '';
+          return Object.hasOwn(fieldLabels, key) ? [fieldLabels[key]] : [];
+        }))] : [];
+        return new MatchError(invalidFields.length
+          ? 'Сервер не принял параметры. Проверьте: ' + invalidFields.join(', ') + '.'
+          : 'Сервер не принял параметры. Проверьте заполненные поля.');
+      }
+      if (status === 429) return new MatchError('Слишком много запросов. Подождите немного и попробуйте снова.');
+      if (status >= 500) return new MatchError('Сервис подбора временно недоступен. Попробуйте снова чуть позже.');
+      const detail = data && typeof data.detail === 'string' ? data.detail.trim() : '';
+      return new MatchError(detail || 'Не удалось выполнить запрос (код ' + status + '). Попробуйте снова.');
+    }
+
+    async function submitMatch(event) {
+      event.preventDefault();
+      if (isLoading) return;
+      validateNumbers();
+      if (!durationInput.validity.valid) durationInput.closest('details').open = true;
+      if (!form.reportValidity()) return;
+
+      const payload = getPayload();
+      clearResults();
+      renderSearchContext(payload);
+      setLoading(true);
+      showState('loading');
+      byId('result-meta').textContent = 'Подбираем варианты';
+      byId('live-status').textContent = 'Подбираем подходящих подрядчиков. Пожалуйста, подождите.';
+      if (window.matchMedia('(max-width: 760px)').matches) {
+        results.scrollIntoView({ behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block:'start' });
+      }
+
+      const controller = new AbortController();
+      const timeout = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+      try {
+        const response = await fetch(API_URL, {
+          method:'POST',
+          headers: { 'Content-Type':'application/json', 'Accept':'application/json' },
+          body:JSON.stringify(payload),
+          signal:controller.signal,
+          credentials:'omit'
+        });
+        let data;
+        try {
+          data = await response.json();
+        } catch (error) {
+          if (error.name === 'AbortError') throw error;
+          if (!response.ok) throw httpError(response.status, null);
+          throw new MatchError('Сервер вернул ответ в неверном формате. Ожидается JSON с рекомендациями.');
+        }
+        if (!response.ok) throw httpError(response.status, data);
+        renderResponse(data);
+      } catch (error) {
+        let text;
+        if (error.name === 'AbortError') {
+          text = 'Сервис не ответил за 45 секунд. Попробуйте ещё раз.';
+        } else if (error instanceof MatchError) {
+          text = error.message;
+        } else {
+          text = 'Не удалось связаться с сервисом подбора. Проверьте подключение к интернету и убедитесь, что сервер запущен.';
+        }
+        // Ошибка всегда видна: автоматической подмены ответа демоданными нет.
+        byId('notice').hidden = true;
+        byId('result-meta').textContent = 'Ошибка запроса';
+        showState('error');
+        byId('error-text').textContent = text;
+        byId('live-status').textContent = '';
+      } finally {
+        window.clearTimeout(timeout);
+        setLoading(false);
+      }
+    }
+
+    form.addEventListener('submit', submitMatch);
+    form.addEventListener('invalid', (event) => {
+      const details = event.target.closest('details');
+      if (details) details.open = true;
+    }, true);
+    byId('retry-button').addEventListener('click', () => form.requestSubmit());
+    // После правки параметров предыдущая подборка перестаёт соответствовать форме.
+    form.addEventListener('input', () => {
+      validateNumbers();
+      if (!isLoading && currentState !== 'initial') {
+        clearResults();
+        showState('initial');
+        byId('live-status').textContent = 'Параметры изменены. Нажмите «Подобрать», чтобы получить новые рекомендации.';
+      }
+    });
+  </script>
+</body>
+</html>
