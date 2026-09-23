@@ -41,26 +41,26 @@
 
 ## Установка и запуск
 
-Требования: Windows, Python 3.10 или новее, доступ к терминалу Bash в VS Code. Выполняйте команды **из корня репозитория**, где находятся `index.html` и `backend/`. Используйте два терминала.
+Требования: Windows и Python 3.10 или новее. Команды ниже можно выполнять в PowerShell, в том числе во встроенном терминале VS Code. Выполняйте команды **из корня репозитория**, где находятся `index.html` и `backend/`. Используйте два терминала.
 
 **Терминал 1 — бэкенд.** При первом запуске создайте виртуальное окружение и установите зависимости:
 
-```bash
+```powershell
 py -m venv .venv
-./.venv/Scripts/python.exe -m pip install -r backend/requirements.txt
+.\.venv\Scripts\python.exe -m pip install -r backend/requirements.txt
 ```
 
 Запустите API:
 
-```bash
-./.venv/Scripts/python.exe -m uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000
+```powershell
+.\.venv\Scripts\python.exe -m uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
 Проверка API: <http://localhost:8000/health>. Интерактивная документация: <http://localhost:8000/docs>.
 
 **Терминал 2 — фронтенд:**
 
-```bash
+```powershell
 py -m http.server 5173 --bind 127.0.0.1
 ```
 
@@ -90,9 +90,9 @@ py -m http.server 5173 --bind 127.0.0.1
 
 При необходимости запустите тесты бэкенда:
 
-```bash
-./.venv/Scripts/python.exe -m pip install -r backend/requirements-dev.txt
-./.venv/Scripts/python.exe -m pytest backend/tests -q
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r backend/requirements-dev.txt
+.\.venv\Scripts\python.exe -m pytest backend/tests -q
 ```
 
 ## Данные и интеграции
