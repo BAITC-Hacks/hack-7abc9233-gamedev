@@ -25,8 +25,8 @@
     :focus-visible { outline:3px solid #a5b4fc; outline-offset:4px; }
     ::selection { background:#4f46e5; color:#fff; }
     .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
-    .skip-link { position:fixed; top:12px; left:12px; z-index:20; transform:translateY(-180%); background:var(--accent); color:#fff; padding:12px 18px; border-radius:8px; }
-    .skip-link:focus { transform:none; }
+    .skip-link { position:fixed; top:12px; left:12px; z-index:20; transform:translateY(-180%); opacity:0; pointer-events:none; background:var(--accent); color:#fff; padding:12px 18px; border-radius:8px; }
+    .skip-link:focus { transform:none; opacity:1; pointer-events:auto; }
     .shell { width:min(1232px,100%); margin:auto; padding-inline:32px; }
     .topbar { border-bottom:1px solid var(--border); background:#10182a; }
     .topbar-inner { min-height:86px; display:flex; align-items:center; justify-content:space-between; gap:20px; }
@@ -68,6 +68,15 @@
     .money-input { padding-right:43px; font-variant-numeric:tabular-nums; }
     .currency { position:absolute; right:15px; top:12px; color:#a5b4fc; font-weight:600; pointer-events:none; }
     .hint { margin-top:7px; color:#94a3bd; font-size:12px; line-height:1.5; }
+    .optional-filters { margin-top:19px; border-top:1px solid var(--border); padding-top:15px; }
+    .optional-filters summary { cursor:pointer; color:#c7d2fe; font-size:14px; font-weight:550; padding:3px 0; }
+    .optional-filters[open] summary { margin-bottom:15px; }
+    .optional-fields { display:grid; gap:17px; }
+    .optional-fields input,.optional-fields select { padding-left:12px; }
+    .data-notes { display:flex; flex-wrap:wrap; gap:6px; margin:-3px 0 16px; }
+    .data-note { color:#e5c888; background:#302d30; border:1px solid #685a3b; border-radius:5px; padding:3px 7px; font-size:12px; }
+    .notice.notice--neutral { border-color:#3e4b70; background:#202941; color:#c6d1ec; }
+    .notice.notice--neutral > .icon { color:#a5b4fc; }
     .form-divider { border:0; border-top:1px solid var(--border); margin:22px 0; }
     .primary { display:flex; align-items:center; justify-content:center; gap:10px; min-height:49px; width:100%; border:1px solid #7771ed; border-radius:10px; background:var(--accent); color:#fff; font-size:16px; font-weight:600; padding:12px 16px; box-shadow:0 4px 16px rgb(49 46 129 / .25); transition:background .16s,transform .16s; }
     .primary:hover:not(:disabled) { background:#5d54ed; transform:translateY(-1px); }
@@ -178,7 +187,7 @@
         <h1 id="page-title">Ваше событие. Ваша команда.</h1>
         <p class="intro-text">До трёх рекомендаций с объяснением, почему они вам подходят.</p>
       </div>
-      <span class="ai-label"><svg class="icon" aria-hidden="true"><use href="#i-spark"/></svg> Подбор с помощью ИИ</span>
+      <span class="ai-label"><svg class="icon" aria-hidden="true"><use href="#i-spark"/></svg> Подбор с объяснением</span>
     </section>
 
     <div class="workspace">
@@ -203,7 +212,7 @@
                 <label for="date">Дата мероприятия</label>
                 <div class="control">
                   <svg class="icon" aria-hidden="true"><use href="#i-calendar"/></svg>
-                  <input id="date" name="date" type="date" value="2026-10-15" min="2026-09-23" max="2026-12-31" required aria-describedby="date-hint">
+                  <input id="date" name="event_date" type="date" value="2026-10-15" min="2026-09-23" max="2026-12-31" required aria-describedby="date-hint">
                 </div>
                 <p id="date-hint" class="hint">Календарь датасета: 23.09–31.12.2026</p>
               </div>
@@ -231,12 +240,35 @@
                 <label for="budget">Бюджет на подрядчика</label>
                 <div class="control">
                   <svg class="icon" aria-hidden="true"><use href="#i-wallet"/></svg>
-                  <input class="money-input" id="budget" name="budget_kzt" type="number" inputmode="numeric" value="500000" min="1" max="9007199254740991" step="1" required aria-describedby="budget-hint">
+                  <input class="money-input" id="budget" name="budget" type="number" inputmode="numeric" value="500000" min="0" max="9007199254740991" step="1" required aria-describedby="budget-hint">
                   <span class="currency" aria-hidden="true">₸</span>
                 </div>
                 <p id="budget-hint" class="hint">Максимальная сумма в тенге</p>
               </div>
             </div>
+            <details class="optional-filters">
+              <summary>Язык и длительность</summary>
+              <div class="optional-fields">
+                <div class="field">
+                  <label for="language">Язык мероприятия</label>
+                  <div class="control">
+                    <select id="language" name="language" aria-describedby="language-hint">
+                      <option value="" selected>Любой язык</option>
+                      <option value="казахский">Казахский</option>
+                      <option value="русский">Русский</option>
+                      <option value="английский">Английский</option>
+                    </select>
+                    <svg class="icon chevron" aria-hidden="true"><use href="#i-chevron"/></svg>
+                  </div>
+                  <p class="hint" id="language-hint">Необязательный фильтр</p>
+                </div>
+                <div class="field">
+                  <label for="duration">Длительность, часов</label>
+                  <input id="duration" name="duration" type="number" min="0" step="any" inputmode="decimal" placeholder="Не указана" aria-describedby="duration-hint">
+                  <p class="hint" id="duration-hint">Например, 6 или 2,5. Можно оставить пустым.</p>
+                </div>
+              </div>
+            </details>
             <hr class="form-divider">
             <button class="primary bg-indigo-600" id="submit-button" type="submit">
               <svg class="icon" id="submit-icon" aria-hidden="true"><use href="#i-spark"/></svg>
@@ -269,14 +301,14 @@
         <div class="state-panel" id="loading-state" hidden>
           <div class="loader-wrap" aria-hidden="true"><span class="spinner"></span></div>
           <div class="state-kicker">Готовим вашу подборку</div>
-          <h3>ИИ подбирает лучшую комбинацию...</h3>
+          <h3>Подбираем подходящих подрядчиков...</h3>
           <p>Это может занять немного времени.</p>
         </div>
 
         <div class="state-panel" id="empty-state" hidden>
           <div class="loader-wrap" aria-hidden="true"><svg class="icon" style="width:34px;height:34px;color:#a5b4fc"><use href="#i-search"/></svg></div>
-          <h3>Подрядчики не найдены</h3>
-          <p>Попробуйте изменить дату, бюджет или другие параметры мероприятия.</p>
+          <h3 id="empty-title">Подрядчики не найдены</h3>
+          <p id="empty-description">Попробуйте изменить дату, бюджет или другие параметры мероприятия.</p>
         </div>
 
         <div class="state-panel" id="error-state" hidden>
@@ -309,6 +341,7 @@
         <span class="location-tag"><svg class="icon" aria-hidden="true"><use href="#i-pin"/></svg><span class="vendor-city"></span></span>
         <span class="price-tag"></span>
       </div>
+      <div class="data-notes" hidden aria-label="Особенности данных профиля"></div>
       <div class="explanation">
         <div class="explanation-title"><svg class="icon" aria-hidden="true"><use href="#i-spark"/></svg>Почему подходит:</div>
         <p class="explanation-text"></p>
@@ -321,23 +354,27 @@
 
     /* ПОДКЛЮЧЕНИЕ К БЭКЕНДУ
      * 1. Запустите FastAPI друга на http://localhost:8000.
-     * 2. POST /match принимает city, date (YYYY-MM-DD), event_type,
-     *    category и целое число budget_kzt. event_type передаётся в нижнем регистре.
-     * 3. Ответ: { message?: string, status_message?: string, cards: [...] }.
-     *    Карточка: anon_name, category, city, price_from_kzt, explanation.
-     * 4. Подбор, проверка busy_dates и генерация explanation выполняются на сервере.
+     * 2. POST /recommend принимает city, event_date (YYYY-MM-DD), event_type,
+     *    category и целое число budget >= 0. duration > 0 и language необязательны.
+     *    Пустые необязательные поля не передаются. event_type — в нижнем регистре.
+     * 3. Ответ: { status, count, results: [...], message, total_candidates,
+     *    total_matches, exclusion_counts }. Карточка: id, name, category, city,
+     *    price, explanation, synthetic, city_imputed, price_imputed.
+     * 4. Подбор, проверка busy_dates и формирование explanation — на сервере.
+     *    В текущем backend-python объяснения шаблонные; внешняя модель не вызывается.
      *    categories/event_formats/busy_dates в CSV разделены символом |.
      * 5. Для другого сервера измените только API_URL ниже. На HTTPS-сайте
      *    укажите публичный HTTPS-адрес бэкенда; localhost — компьютер посетителя.
      * 6. CORS на FastAPI должен разрешать origin фронтенда, POST и Content-Type.
-     *    У файла file:// origin обычно "null". Для локальной разработки удобнее
-     *    python -m http.server 5500 и origin http://localhost:5500.
+     *    Используйте python -m http.server 5173 и http://localhost:5173:
+     *    этот origin уже разрешён в backend-python. file:// — только для просмотра,
+     *    его origin "null" не разрешён бэкендом по умолчанию.
      *    Не используйте mode: 'no-cors': он не позволяет прочитать ответ.
      * 7. Пределы input#date соответствуют календарю приложенного датасета.
      *    Если календарь расширится, обновите min/max и текст date-hint.
      * В файл не встроены фиктивные рекомендации или ключи доступа к ИИ.
      */
-    const API_URL = 'http://localhost:8000/match';
+    const API_URL = 'http://localhost:8000/recommend';
     const REQUEST_TIMEOUT_MS = 45000;
     const MAX_CARDS = 3;
 
@@ -347,6 +384,7 @@
     const results = byId('results');
     const cardsContainer = byId('cards');
     const budgetInput = byId('budget');
+    const durationInput = byId('duration');
     const numberFormat = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2 });
     const dateFormat = new Intl.DateTimeFormat('ru-RU', { day:'numeric', month:'long', year:'numeric' });
     const stateNames = ['initial', 'loading', 'empty', 'error', 'success'];
@@ -375,6 +413,7 @@
     function clearResults() {
       cardsContainer.replaceChildren();
       byId('notice').hidden = true;
+      byId('notice').classList.remove('notice--neutral');
       byId('notice-text').textContent = '';
       byId('result-count').hidden = true;
       byId('result-meta').textContent = 'До 3 подрядчиков';
@@ -384,28 +423,39 @@
     }
 
     function getPayload() {
-      return {
+      const payload = {
         city: byId('city').value,
-        date: byId('date').value,
+        event_date: byId('date').value,
         event_type: byId('event-type').value,
         category: byId('category').value,
-        budget_kzt: Number(budgetInput.value)
+        budget: Number(budgetInput.value)
       };
+      const language = byId('language').value;
+      if (language) payload.language = language;
+      if (durationInput.value !== '') payload.duration = Number(durationInput.value);
+      return payload;
     }
 
-    function validateBudget() {
+    function validateNumbers() {
       budgetInput.setCustomValidity('');
-      if (budgetInput.value && (!Number.isSafeInteger(Number(budgetInput.value)) || Number(budgetInput.value) <= 0)) {
-        budgetInput.setCustomValidity('Укажите положительную целую сумму в тенге.');
+      if (budgetInput.value && (!Number.isSafeInteger(Number(budgetInput.value)) || Number(budgetInput.value) < 0)) {
+        budgetInput.setCustomValidity('Укажите целую сумму в тенге, не меньше нуля.');
+      }
+      durationInput.setCustomValidity('');
+      if (durationInput.value !== '' && (!Number.isFinite(Number(durationInput.value)) || Number(durationInput.value) <= 0)) {
+        durationInput.setCustomValidity('Укажите длительность больше нуля или оставьте поле пустым.');
       }
     }
 
     function renderSearchContext(payload) {
       const container = byId('search-context');
       // Локальный полдень исключает сдвиг даты при преобразовании часового пояса.
-      const label = dateFormat.format(new Date(payload.date + 'T12:00:00'));
+      const label = dateFormat.format(new Date(payload.event_date + 'T12:00:00'));
       const eventName = payload.event_type.charAt(0).toUpperCase() + payload.event_type.slice(1);
-      [payload.city, label, eventName, payload.category, 'До ' + numberFormat.format(payload.budget_kzt) + ' ₸'].forEach((text) => {
+      const labels = [payload.city, label, eventName, payload.category, 'До ' + numberFormat.format(payload.budget) + ' ₸'];
+      if (payload.language) labels.push('Язык: ' + payload.language);
+      if (payload.duration !== undefined) labels.push(numberFormat.format(payload.duration) + ' ч');
+      labels.forEach((text) => {
         const chip = document.createElement('span');
         chip.className = 'context-chip';
         chip.textContent = text;
@@ -421,19 +471,23 @@
     }
 
     function normalizeCard(card) {
-      if (!card || typeof card !== 'object' || Array.isArray(card) || typeof card.anon_name !== 'string' || !card.anon_name.trim()) {
+      if (!card || typeof card !== 'object' || Array.isArray(card) || typeof card.name !== 'string' || !card.name.trim()) {
         throw new MatchError('Сервер прислал карточку без имени подрядчика. Попробуйте повторить запрос.');
       }
       const cleanText = (value, fallback) => typeof value === 'string' && value.trim() ? value.trim() : fallback;
-      const rawPrice = card.price_from_kzt;
+      const rawPrice = card.price;
       const hasPrice = (typeof rawPrice === 'number' || typeof rawPrice === 'string') && String(rawPrice).trim() !== '';
       const price = hasPrice ? Number(rawPrice) : NaN;
       return {
-        anon_name: card.anon_name.trim(),
+        id: cleanText(card.id, ''),
+        name: card.name.trim(),
         category: cleanText(card.category, 'Категория не указана'),
         city: cleanText(card.city, 'Город не указан'),
-        price_from_kzt: Number.isFinite(price) && price >= 0 ? price : null,
-        explanation: cleanText(card.explanation, 'Сервер не передал объяснение для этого подрядчика.')
+        price: Number.isFinite(price) && price >= 0 ? price : null,
+        explanation: cleanText(card.explanation, 'Сервер не передал объяснение для этого подрядчика.'),
+        synthetic: card.synthetic === true,
+        city_imputed: card.city_imputed === true,
+        price_imputed: card.price_imputed === true
       };
     }
 
@@ -449,39 +503,76 @@
     function renderCard(card, index) {
       const fragment = byId('card-template').content.cloneNode(true);
       // Любой серверный текст вставляется через textContent, без выполнения HTML.
-      fragment.querySelector('.vendor-name').textContent = card.anon_name;
+      fragment.querySelector('.vendor-name').textContent = card.name;
+      if (card.id) fragment.querySelector('.vendor-card').dataset.profileId = card.id;
       fragment.querySelector('.vendor-category').textContent = card.category.split('|').join(' · ');
       fragment.querySelector('.vendor-city').textContent = card.city;
-      fragment.querySelector('.price-tag').textContent = card.price_from_kzt === null
-        ? 'Цена уточняется' : 'от ' + numberFormat.format(card.price_from_kzt) + ' ₸';
+      fragment.querySelector('.price-tag').textContent = card.price === null
+        ? 'Цена уточняется' : 'от ' + numberFormat.format(card.price) + ' ₸';
       fragment.querySelector('.explanation-text').textContent = card.explanation;
       fragment.querySelector('.card-number').textContent = String(index + 1).padStart(2, '0');
       fragment.querySelector('.category-icon').setAttribute('href', iconFor(card.category));
+      const notes = fragment.querySelector('.data-notes');
+      const flags = [
+        [card.price_imputed, 'Цена заполнена в датасете'],
+        [card.city_imputed, 'Город заполнен в датасете'],
+        [card.synthetic, 'Синтетический профиль']
+      ];
+      flags.forEach(([enabled, label]) => {
+        if (!enabled) return;
+        const badge = document.createElement('span');
+        badge.className = 'data-note';
+        badge.textContent = label;
+        notes.append(badge);
+      });
+      notes.hidden = !notes.childElementCount;
       return fragment;
     }
 
     function renderResponse(data) {
-      if (!data || typeof data !== 'object' || Array.isArray(data) || !Array.isArray(data.cards)) {
-        throw new MatchError('Сервер вернул ответ без списка подрядчиков. Ожидается поле cards со списком карточек.');
+      if (!data || typeof data !== 'object' || Array.isArray(data) || !Array.isArray(data.results)) {
+        throw new MatchError('Сервер вернул ответ без списка подрядчиков. Ожидается поле results со списком карточек.');
+      }
+      if (!['matches_found', 'no_category_in_city', 'no_matches'].includes(data.status)) {
+        throw new MatchError('Сервер вернул неизвестный статус подбора. Попробуйте повторить запрос.');
+      }
+      if ((data.status === 'matches_found') !== (data.results.length > 0)) {
+        throw new MatchError('Статус ответа не соответствует списку подрядчиков. Попробуйте повторить запрос.');
       }
       // Сохраняем порядок ранжирования бэкенда и не показываем больше трёх карточек.
-      const cards = data.cards.slice(0, MAX_CARDS).map(normalizeCard);
+      const cards = data.results.slice(0, MAX_CARDS).map(normalizeCard);
       const message = messageFrom(data);
       const fragment = document.createDocumentFragment();
       cards.forEach((card, index) => fragment.append(renderCard(card, index)));
       cardsContainer.replaceChildren(fragment);
       byId('notice-text').textContent = message;
       byId('notice').hidden = !message;
+      byId('notice').classList.toggle('notice--neutral', cards.length === MAX_CARDS);
       byId('result-count').textContent = String(cards.length);
       byId('result-count').hidden = false;
-      byId('result-meta').textContent = cards.length ? 'По вашему запросу' : 'Нет совпадений';
+      const total = Number.isSafeInteger(data.total_matches) && data.total_matches >= cards.length
+        ? data.total_matches : cards.length;
+      byId('result-meta').textContent = cards.length ? 'Показано ' + cards.length + ' из ' + total : 'Нет совпадений';
+      const noCategory = data.status === 'no_category_in_city';
+      byId('empty-title').textContent = noCategory ? 'В этом городе нет такой категории' : 'Нет совпадений по вашим условиям';
+      byId('empty-description').textContent = noCategory
+        ? 'Выберите другой город или категорию подрядчика.'
+        : 'Попробуйте изменить дату, бюджет, язык или длительность мероприятия.';
       showState(cards.length ? 'success' : 'empty');
       byId('live-status').textContent = 'Подбор завершён. Показано вариантов: ' + cards.length + '. ' + message;
     }
 
     function httpError(status, data) {
       if (status === 422) {
-        return new MatchError('Сервер не принял параметры. Проверьте город, дату, категорию и бюджет.');
+        const fieldLabels = { city:'город', event_date:'дата мероприятия', event_type:'формат мероприятия',
+          category:'категория', budget:'бюджет', duration:'длительность', language:'язык' };
+        const invalidFields = Array.isArray(data?.detail) ? [...new Set(data.detail.flatMap((issue) => {
+          const key = Array.isArray(issue?.loc) ? issue.loc[issue.loc.length - 1] : '';
+          return Object.hasOwn(fieldLabels, key) ? [fieldLabels[key]] : [];
+        }))] : [];
+        return new MatchError(invalidFields.length
+          ? 'Сервер не принял параметры. Проверьте: ' + invalidFields.join(', ') + '.'
+          : 'Сервер не принял параметры. Проверьте заполненные поля.');
       }
       if (status === 429) return new MatchError('Слишком много запросов. Подождите немного и попробуйте снова.');
       if (status >= 500) return new MatchError('Сервис подбора временно недоступен. Попробуйте снова чуть позже.');
@@ -492,7 +583,8 @@
     async function submitMatch(event) {
       event.preventDefault();
       if (isLoading) return;
-      validateBudget();
+      validateNumbers();
+      if (!durationInput.validity.valid) durationInput.closest('details').open = true;
       if (!form.reportValidity()) return;
 
       const payload = getPayload();
@@ -501,7 +593,7 @@
       setLoading(true);
       showState('loading');
       byId('result-meta').textContent = 'Подбираем варианты';
-      byId('live-status').textContent = 'ИИ подбирает лучшую комбинацию. Пожалуйста, подождите.';
+      byId('live-status').textContent = 'Подбираем подходящих подрядчиков. Пожалуйста, подождите.';
       if (window.matchMedia('(max-width: 760px)').matches) {
         results.scrollIntoView({ behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block:'start' });
       }
@@ -548,10 +640,14 @@
     }
 
     form.addEventListener('submit', submitMatch);
+    form.addEventListener('invalid', (event) => {
+      const details = event.target.closest('details');
+      if (details) details.open = true;
+    }, true);
     byId('retry-button').addEventListener('click', () => form.requestSubmit());
     // После правки параметров предыдущая подборка перестаёт соответствовать форме.
     form.addEventListener('input', () => {
-      validateBudget();
+      validateNumbers();
       if (!isLoading && currentState !== 'initial') {
         clearResults();
         showState('initial');
