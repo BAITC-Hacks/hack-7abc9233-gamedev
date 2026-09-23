@@ -61,6 +61,24 @@ Invoke-RestMethod -Uri http://127.0.0.1:8000/recommend -Method Post -ContentType
 
 ## Настройки и тесты
 
+### OpenAI для ranking/explanation
+
+Настройки автоматически загружаются из `.env` в корне репозитория; переменные окружения имеют приоритет. Скопируйте `.env.example` в `.env` и заполните `OPENAI_API_KEY` локально. Файл `.env` и его варианты исключены из Git; `.env.example` содержит только пустое поле. Если ключ был раскрыт в чате или репозитории, отзовите его и замените новым.
+
+Для кода напарника доступен клиент:
+
+```python
+from backend.openai_client import create_openai_client
+
+with create_openai_client() as client:
+    # Здесь напарник подключает ranking/explanation через SDK.
+    pass
+```
+
+Фабрика сама не отправляет запросов. `/recommend` пока использует локальный baseline и не обращается к OpenAI; без ключа backend также запускается. При вызове фабрики без ключа выдаётся понятная ошибка. Таймаут клиента — 8 секунд, автоматические повторы отключены. Модель выбирается при интеграции ranking.
+
+Хранение ключа через окружение соответствует [официальной документации OpenAI](https://developers.openai.com/api/docs/guides/production-best-practices).
+
 `CONTRACTORS_CSV` задаёт альтернативный путь CSV; после изменения данных нужен перезапуск. Неверный CSV останавливает запуск с причиной ошибки. `CORS_ORIGINS` — список адресов frontend через запятую (по умолчанию localhost и 127.0.0.1 на порту 5173).
 
 ```powershell
@@ -69,4 +87,4 @@ Invoke-RestMethod -Uri http://127.0.0.1:8000/recommend -Method Post -ContentType
 
 Для запуска без тестовых зависимостей достаточно `backend/requirements.txt`. База данных и ключи внешних API не нужны.
 
-`requirements-lock.txt` фиксирует полный набор зависимостей, проверенный на Python 3.14.6: `python -m pip install -r backend/requirements-lock.txt`. Проверка: 20 тестов проходят; установленный Starlette предупреждает о будущем переходе TestClient с httpx на httpx2.
+`requirements-lock.txt` фиксирует полный набор зависимостей, проверенный на Python 3.14.6: `python -m pip install -r backend/requirements-lock.txt`. Проверка: 22 теста проходят; установленный Starlette предупреждает о будущем переходе TestClient с httpx на httpx2.

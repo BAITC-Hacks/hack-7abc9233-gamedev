@@ -5,12 +5,15 @@ from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
+from .config import load_environment
 from .loader import DEFAULT_DATA_PATH, load_contractors
 from .models import RecommendRequest, RecommendResponse
 from .service import recommend
 
 
 def create_app(data_path: Path | None = None) -> FastAPI:
+    load_environment()
+
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         path = data_path if data_path is not None else Path(os.getenv("CONTRACTORS_CSV", str(DEFAULT_DATA_PATH)))
